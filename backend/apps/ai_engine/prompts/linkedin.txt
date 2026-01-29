@@ -1,0 +1,4 @@
+Rewrite the following content for LinkedIn. 
+Keep it professional, engaging, and suitable for the LinkedIn feed.
+Content:
+{base_content}

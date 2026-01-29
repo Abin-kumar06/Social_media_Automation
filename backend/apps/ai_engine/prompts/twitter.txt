@@ -1,0 +1,4 @@
+Rewrite the following content for Twitter (X). 
+Keep it concise, within character limits, and use trending styles.
+Content:
+{base_content}

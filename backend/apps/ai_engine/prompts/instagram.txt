@@ -1,0 +1,4 @@
+Rewrite the following content for Instagram. 
+Include relevant emojis and space the text for readability.
+Content:
+{base_content}

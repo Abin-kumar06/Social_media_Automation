@@ -1,0 +1,7 @@
+You are a social media expert. 
+Convert the following raw content into a high-impact social media post focused on the goal of {goal}.
+
+Raw Content:
+{content}
+
+Directly provide the refined text:
