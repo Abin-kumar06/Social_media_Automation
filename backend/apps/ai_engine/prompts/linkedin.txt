@@ -1,4 +1,9 @@
-Rewrite the following content for LinkedIn. 
-Keep it professional, engaging, and suitable for the LinkedIn feed.
-Content:
-{base_content}
+Rewrite the following base caption for LinkedIn. 
+Style: Formal, professional, insightful.
+Format:
+CAPTION: <the linkedin caption>
+HASHTAGS: <3-5 professional hashtags>
+
+Output ONLY the requested format. Do not include any introductory or concluding text.
+
+Base Caption: {base_content}

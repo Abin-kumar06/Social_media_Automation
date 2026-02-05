@@ -17,6 +17,9 @@ urlpatterns = [
     
     # Posts Endpoints
     path('api/posts/', include('apps.posts.urls')),
+    
+    # Platforms Endpoints
+    path('api/platforms/', include('apps.platforms.urls')),
 ]
 
 if settings.DEBUG:

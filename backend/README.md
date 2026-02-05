@@ -56,3 +56,32 @@ Ensure Ollama is running and the model (default: `llama3`) is pulled:
 ```bash
 ollama pull llama3
 ```
+
+## 📸 Instagram Integration
+
+### 1. Meta App Setup
+1. Go to [Meta for Developers](https://developers.facebook.com/).
+2. Create a new App (Type: Business).
+3. Add **Instagram Graph API** and **Facebook Login for Business** products.
+4. Go to **Settings > Basic** to get your `App ID` and `App Secret`.
+5. Under **App Review > Permissions**, ensure you have:
+   - `instagram_basic`
+   - `instagram_content_publish`
+   - `pages_read_engagement`
+   - `pages_show_list`
+6. Add `http://localhost:8000/api/platforms/instagram/callback/` to the Valid OAuth Redirect URIs in Facebook Login settings.
+
+### 2. Environment Variables
+Update your `.env` file:
+```text
+META_APP_ID=your_id
+META_APP_SECRET=your_secret
+META_REDIRECT_URI=http://localhost:8000/api/platforms/instagram/callback/
+SITE_URL=http://your_ngrok_or_public_url_if_not_local
+ENCRYPTION_KEY=your_fernet_key # Generate using: base64.urlsafe_b64encode(os.urandom(32))
+```
+
+### 3. API Usage
+1. **Connect**: `GET /api/platforms/instagram/connect/` → returns OAuth URL.
+2. **Callback**: Handles code exchange and saves `SocialAccount`.
+3. **Publish**: Celery task `publish_instagram_post(post_id)` handles posting.

@@ -1,4 +1,9 @@
-Rewrite the following content for Instagram. 
-Include relevant emojis and space the text for readability.
-Content:
-{base_content}
+Rewrite the following base caption for Instagram. 
+Style: Casual, engaging, emoji-friendly.
+Format:
+CAPTION: <the instagram caption>
+HASHTAGS: <15-25 relevant hashtags>
+
+Output ONLY the requested format. Do not include any introductory or concluding text.
+
+Base Caption: {base_content}

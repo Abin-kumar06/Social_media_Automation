@@ -6,6 +6,8 @@ class Post(models.Model):
         ('draft', 'Draft'),
         ('generating', 'Generating'),
         ('generated', 'Generated'),
+        ('posting', 'Posting'),
+        ('posted', 'Posted'),
         ('failed', 'Failed'),
     )
 
@@ -21,8 +23,21 @@ class Post(models.Model):
     platforms = models.JSONField(default=list)  # list of platforms: instagram, linkedin, twitter
     image = models.ImageField(upload_to='post_images/', null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    scheduled_at = models.DateTimeField(null=True, blank=True)
     
-    # Stores generated outputs: { "instagram": {"caption": "...", "hashtags": "..."}, ... }
+    # Generated Content Fields
+    base_caption = models.TextField(blank=True, null=True)
+    
+    instagram_caption = models.TextField(blank=True, null=True)
+    instagram_hashtags = models.TextField(blank=True, null=True)
+    
+    linkedin_caption = models.TextField(blank=True, null=True)
+    linkedin_hashtags = models.TextField(blank=True, null=True)
+    
+    twitter_caption = models.TextField(blank=True, null=True)
+    twitter_hashtags = models.TextField(blank=True, null=True)
+    
+    # Stores raw platform response IDs or error logs
     generated_outputs = models.JSONField(default=dict, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)

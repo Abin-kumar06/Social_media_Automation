@@ -1,4 +1,5 @@
 import os
+import base64
 from pathlib import Path
 from datetime import timedelta
 import environ
@@ -15,6 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me')
+ENCRYPTION_KEY = env('ENCRYPTION_KEY', default=base64.urlsafe_b64encode(b'dev-fallback-key-32-bytes-long!!!').decode())
 DEBUG = env('DEBUG', default=True)
 
 ALLOWED_HOSTS = ['*']
@@ -37,6 +39,8 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.posts',
     'apps.ai_engine',
+    'apps.platforms',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -134,5 +138,53 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
+# Celery Beat Schedule
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'check-scheduled-posts-every-minute': {
+        'task': 'apps.posts.tasks.check_and_publish_scheduled_posts',
+        'schedule': crontab(minute='*'),
+    },
+}
+
 # CORS Settings
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Site URL for external services (e.g. Meta Graph API)
+SITE_URL = env('SITE_URL', default='http://localhost:8000')
+
+# Meta API Settings
+META_APP_ID = env('META_APP_ID', default='')
+META_APP_SECRET = env('META_APP_SECRET', default='')
+META_REDIRECT_URI = env('META_REDIRECT_URI', default='http://localhost:8000/api/platforms/instagram/callback/')
+META_GRAPH_BASE = env('META_GRAPH_BASE', default='https://graph.facebook.com/v19.0')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'apps': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}

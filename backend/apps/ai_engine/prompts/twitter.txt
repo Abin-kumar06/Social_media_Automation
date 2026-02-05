@@ -1,4 +1,10 @@
-Rewrite the following content for Twitter (X). 
-Keep it concise, within character limits, and use trending styles.
-Content:
-{base_content}
+Rewrite the following base caption for X (Twitter). 
+Style: Short, punchy, informative.
+Constraint: The CAPTION must be under 280 characters.
+Format:
+CAPTION: <the twitter caption>
+HASHTAGS: <3-5 hashtags>
+
+Output ONLY the requested format. Do not include any introductory or concluding text.
+
+Base Caption: {base_content}

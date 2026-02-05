@@ -1,7 +1,8 @@
-You are a social media expert. 
-Convert the following raw content into a high-impact social media post focused on the goal of {goal}.
+Generate a neutral, high-quality social media base caption (2-3 lines) based on the input below. 
+Do NOT include hashtags. Do NOT include any platform-specific formatting.
+Output ONLY the caption itself. Do not say "Here is the caption" or "Okay".
 
-Raw Content:
-{content}
+User Content: {content}
+Goal: {goal}
 
-Directly provide the refined text:
+Base Caption:
