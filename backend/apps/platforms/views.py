@@ -25,6 +25,14 @@ class InstagramCallbackView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        # 0. Check for errors from Meta/Facebook
+        error_reason = request.query_params.get('error_reason')
+        error_description = request.query_params.get('error_description')
+        if error_reason:
+            logger.error(f"Instagram OAuth Error: {error_reason} - {error_description}")
+            frontend_url = f'http://localhost:5173/platforms?status=error&message={error_reason}: {error_description}'
+            return redirect(frontend_url)
+
         code = request.query_params.get('code')
         if not code:
             return Response({'error': 'No code provided'}, status=status.HTTP_400_BAD_REQUEST)
@@ -65,14 +73,14 @@ class InstagramCallbackView(APIView):
             )
             
             logger.info(f"Instagram connected successfully for user {user.id}")
-            return Response({
-                'message': 'Instagram connected successfully',
-                'ig_user_id': ig_info['ig_user_id'],
-                'connected_at': social_account.connected_at
-            })
+            # Redirect to frontend with success status
+            frontend_url = 'http://localhost:5173/platforms?status=success'
+            return redirect(frontend_url)
 
         except Exception as e:
             logger.error(f"Error in Instagram callback: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            # Redirect to frontend with error status
+            frontend_url = f'http://localhost:5173/platforms?status=error&message={str(e)}'
+            return redirect(frontend_url)
 
