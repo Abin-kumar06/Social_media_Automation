@@ -7,9 +7,19 @@ class EncryptionManager:
     def get_fernet():
         key = getattr(settings, 'ENCRYPTION_KEY', None)
         if not key:
-            # Fallback for development if not set, though it should be set in production
-            key = base64.urlsafe_b64encode(b'dev-fallback-key-32-bytes-long!!!')
-        return Fernet(key)
+            key = base64.urlsafe_b64encode(b'dev-fallback-key-32-bytes-long!!!').decode()
+        
+        # Ensure it is bytes and clean
+        if isinstance(key, str):
+            key = key.strip().encode()
+            
+        try:
+            return Fernet(key)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"ENCRYPTION ERROR: Key length is {len(key)}. Fernet key must be 32 base64-encoded bytes (44 chars).")
+            raise e
 
     @classmethod
     def encrypt(cls, text):

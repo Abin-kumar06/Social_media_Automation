@@ -80,79 +80,103 @@ class InstagramService:
         return data
 
     @classmethod
+    def debug_token(cls, access_token):
+        """Introspect token to check permissions and targets"""
+        config = cls._get_config()
+        url = f"{config['base_url']}/debug_token"
+        params = {
+            'input_token': access_token,
+            'access_token': f"{config['app_id']}|{config['app_secret']}"
+        }
+        try:
+            response = requests.get(url, params=params).json()
+            data = response.get('data', {})
+            logger.info(f"Token Debug Info: {data}")
+            return data
+        except Exception as e:
+            logger.warning(f"Could not debug token: {str(e)}")
+            return {}
+
+    @classmethod
     def get_user_info(cls, access_token):
         """Get IG Business User ID and Page ID"""
         config = cls._get_config()
         
-        # Debug: Log the access token (partially masked)
-        masked_token = access_token[:10] + "..." + access_token[-10:] if len(access_token) > 20 else "***"
-        logger.info(f"Using access token: {masked_token}")
-
-        # DEBUG: Check User Identity
-        user_url = f"{config['base_url']}/me"
-        user_response = requests.get(user_url, params={'access_token': access_token})
-        logger.info(f"User Info: {user_response.json()}")
-        print(f"DEBUG: User Info -> {user_response.json()}")
-
-        # DEBUG: Check Granted Permissions
-        perm_url = f"{config['base_url']}/me/permissions"
-        perm_response = requests.get(perm_url, params={'access_token': access_token})
-        logger.info(f"Granted Permissions: {perm_response.json()}")
-        print(f"DEBUG: Granted Permissions -> {perm_response.json()}")
+    @classmethod
+    def get_user_info(cls, access_token):
+        """Get IG Business User ID and Page ID"""
+        config = cls._get_config()
         
-        # 1. Get user's managed pages
+        # 0. Introspect the token
+        debug_info = cls.debug_token(access_token)
+        
+        # 1. Strategy A: Standard /me/accounts
         pages_url = f"{config['base_url']}/me/accounts"
         params = {
             'access_token': access_token,
-            'fields': 'id,name,access_token,instagram_business_account',
+            'fields': 'id,name,instagram_business_account',
             'limit': 100
         }
         
-        logger.info(f"Requesting pages from: {pages_url}")
         response = requests.get(pages_url, params=params)
-        
-        # Log response status and headers
-        logger.info(f"Response status: {response.status_code}")
-        
         data = response.json()
         
-        logger.info(f"Full API Response: {data}")
-        print(f"\n{'='*80}")
-        print(f"DEBUG: Meta /me/accounts Response:")
-        print(f"Status Code: {response.status_code}")
-        print(f"Response Data: {data}")
-        print(f"{'='*80}\n")
-        
-        # Check for API errors
-        if 'error' in data:
-            error_msg = data['error'].get('message', 'Unknown error')
-            error_code = data['error'].get('code', 'N/A')
-            logger.error(f"Facebook API Error: {error_msg} (Code: {error_code})")
-            raise Exception(f"Facebook API Error: {error_msg}")
-        
-        if 'data' not in data or not data['data']:
-            logger.warning("No pages list returned. Checking if the authenticated user IS a page...")
-            
-            # Fallback: Check if the current "me" is actually the page we want
-            me_url = f"{config['base_url']}/me"
-            me_params = {
-                'fields': 'id,name,instagram_business_account',
+        # 2. Strategy B: Nested /me?fields=accounts
+        if not data.get('data'):
+            me_acc_url = f"{config['base_url']}/me"
+            me_acc_params = {
+                'fields': 'accounts{id,name,instagram_business_account}',
                 'access_token': access_token
             }
-            me_response = requests.get(me_url, params=me_params).json()
-            logger.info(f"Checking /me context: {me_response}")
-            
-            if 'instagram_business_account' in me_response:
-                logger.info(f"The authenticated user is the Page! Using direct access.")
-                return {
-                    'page_id': me_response['id'],
-                    'ig_user_id': me_response['instagram_business_account']['id'],
-                }
-            
-            logger.error(f"Fallback failed. Me Response: {me_response}")
-            raise Exception(f"No pages found. Fallback Context: {me_response}")
+            try:
+                me_acc_response = requests.get(me_acc_url, params=me_acc_params).json()
+                if 'accounts' in me_acc_response:
+                    data = me_acc_response['accounts']
+            except Exception:
+                pass
 
-        logger.info(f"Found {len(data['data'])} page(s)")
+        # 3. Strategy C: Metadata Extraction (The most reliable for Dev mode)
+        if not data.get('data'):
+            granular_scopes = debug_info.get('granular_scopes', [])
+            page_id = None
+            ig_user_id = None
+            
+            for item in granular_scopes:
+                scope = item.get('scope')
+                target_ids = item.get('target_ids', [])
+                if scope == 'pages_show_list' and target_ids:
+                    page_id = target_ids[0]
+                if scope == 'instagram_basic' and target_ids:
+                    ig_user_id = target_ids[0]
+            
+            if page_id and ig_user_id:
+                logger.info(f"Instagram Account Found via Token Metadata (Page: {page_id}, IG: {ig_user_id})")
+                return {
+                    'page_id': page_id,
+                    'ig_user_id': ig_user_id,
+                }
+
+        if 'error' in data:
+            raise Exception(f"Facebook API Error: {data['error'].get('message', 'Unknown error')}")
+        
+        if 'data' not in data or not data['data']:
+            raise Exception(
+                "Meta is still returning 0 Pages. This is likely a Meta App configuration issue (Advanced Access required)."
+            )
+
+        logger.info(f"Checking {len(data['data'])} found page(s) for linked IG accounts...")
+        
+        for page in data['data']:
+            page_id = page['id']
+            if 'instagram_business_account' in page:
+                ig_account = page['instagram_business_account']
+                logger.info(f"Instagram Account Found: {ig_account['id']} on Page {page_id}")
+                return {
+                    'page_id': page_id,
+                    'ig_user_id': ig_account['id'],
+                }
+        
+        raise Exception("Found Facebook Page(s) but none are linked to an Instagram Business account.")
         
         # For production, we might want the user to select which page. 
         # For simplicity, we'll take the first page that has an IG Business Account.
